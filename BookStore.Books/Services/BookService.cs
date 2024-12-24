@@ -30,6 +30,10 @@ namespace BookStore.Books.Services
         {
             return await _bookRepo.GetAllBooksFromDbAsync();
         }
+        public async Task<ApiResponse<Book>> GetBookByIdAsync(int Id)
+        {
+            return await _bookRepo.GetBookByIdFromDb(Id);
+        }
     }
 
 }

@@ -168,3 +168,7 @@ D:\BookStore.Books\BookStore.Books\obj\Debug\net8.0\BookStore.Books.pdb
 D:\BookStore.Books\BookStore.Books\obj\Debug\net8.0\BookStore.Books.genruntimeconfig.cache
 D:\BookStore.Books\BookStore.Books\obj\Debug\net8.0\ref\BookStore.Books.dll
 D:\BookStore.Books\BookStore.Books\bin\Debug\net8.0\Microsoft.AspNetCore.Authentication.JwtBearer.dll
+D:\BookStore.Books\BookStore.Books\bin\Debug\net8.0\Microsoft.Extensions.Caching.StackExchangeRedis.dll
+D:\BookStore.Books\BookStore.Books\bin\Debug\net8.0\Pipelines.Sockets.Unofficial.dll
+D:\BookStore.Books\BookStore.Books\bin\Debug\net8.0\StackExchange.Redis.dll
+D:\BookStore.Books\BookStore.Books\obj\Debug\net8.0\BookStore.Books.sourcelink.json

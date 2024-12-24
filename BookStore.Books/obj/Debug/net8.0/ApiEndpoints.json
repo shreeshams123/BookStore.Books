@@ -61,5 +61,21 @@
       }
     ],
     "ReturnTypes": []
+  },
+  {
+    "ContainingType": "BookStore.Books.Controllers.BookContoller",
+    "Method": "GetBookById",
+    "RelativePath": "api/book/{Id}",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "Id",
+        "Type": "System.Int32",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
   }
 ]

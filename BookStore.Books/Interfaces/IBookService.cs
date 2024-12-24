@@ -10,5 +10,6 @@ namespace BookStore.Books.Interfaces
         Task<ApiResponse<Book>> UpdateBookAsync(int bookId, UpdateBookDto bookDto);
         Task<ApiResponse<Book>> DeleteBookAsync(int bookId);
         Task<ApiResponse<List<Book>>> GetAllBooksAsync();
+        Task<ApiResponse<Book>> GetBookByIdAsync(int Id);
     }
 }

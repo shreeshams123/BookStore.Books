@@ -4,16 +4,20 @@ using BookStore.Books.Models;
 using BookStore.Books.Models.Dtos;
 using BookStore.Books.Models.Entities;
 using Microsoft.EntityFrameworkCore;
+using static Azure.Core.HttpHeader;
+using System.Text.Json;
+using Microsoft.Extensions.Caching.Distributed;
 
 namespace BookStore.Books.Repositories
 {
-    public class BookRepo:IBookRepo
+    public class BookRepo : IBookRepo
     {
         private readonly BookDbContext _context;
-
-        public BookRepo(BookDbContext context)
+        private readonly IDistributedCache _distributedCache;
+        public BookRepo(BookDbContext context, IDistributedCache distributedCache)
         {
             _context = context;
+            _distributedCache = distributedCache;
         }
 
         public async Task<ApiResponse<Book>> AddBookToDbAsync(CreateBookDto bookDto)
@@ -31,7 +35,7 @@ namespace BookStore.Books.Repositories
             await _context.SaveChangesAsync();
             var response = new ApiResponse<Book>
             {
-                Success = true,  
+                Success = true,
                 Message = "Book created successfully",
                 Data = book
             };
@@ -93,6 +97,12 @@ namespace BookStore.Books.Repositories
         public async Task<ApiResponse<List<Book>>> GetAllBooksFromDbAsync()
         {
             var books = await _context.Books.ToListAsync();
+            var serializedbooks = JsonSerializer.Serialize(books);
+            await _distributedCache.SetStringAsync($"allBooks", serializedbooks, new DistributedCacheEntryOptions
+            {
+                AbsoluteExpirationRelativeToNow = TimeSpan.FromMinutes(5)
+            });
+
             return new ApiResponse<List<Book>>
             {
                 Success = true,
@@ -101,5 +111,29 @@ namespace BookStore.Books.Repositories
             };
         }
 
+        public async Task<ApiResponse<Book>> GetBookByIdFromDb(int Id)
+        {
+            var book = await _context.Books.FindAsync(Id);
+            if (book == null)
+            {
+                return new ApiResponse<Book>
+                {
+                    Success = false,
+                    Message = "Book Not found"
+                };
+            }
+            else
+            {
+                return new ApiResponse<Book>
+                {
+                    Success = true,
+                    Message = "Book retrieved successfully",
+                    Data = book
+                };
+
+
+            }
+
+        }
     }
 }
