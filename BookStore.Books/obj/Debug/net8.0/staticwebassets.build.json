@@ -1,0 +1,19 @@
+{
+  "Version": 1,
+  "Hash": "rdJCEWv1+eHTqfeiQij3O1AtR2mixTI7IQVHfZLyfLE=",
+  "Source": "BookStore.Books",
+  "BasePath": "_content/BookStore.Books",
+  "Mode": "Default",
+  "ManifestType": "Build",
+  "ReferencedProjectsConfiguration": [],
+  "DiscoveryPatterns": [
+    {
+      "Name": "BookStore.Books\\wwwroot",
+      "Source": "BookStore.Books",
+      "ContentRoot": "D:\\BookStore.Books\\BookStore.Books\\wwwroot\\",
+      "BasePath": "_content/BookStore.Books",
+      "Pattern": "**"
+    }
+  ],
+  "Assets": []
+}
