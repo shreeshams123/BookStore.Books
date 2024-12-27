@@ -21,10 +21,24 @@ namespace BookStore.Books.Controllers
         }
         [HttpPost]
         [Authorize(Roles = "Admin")]
-        public async Task<IActionResult> CreateBook([FromBody] CreateBookDto bookDto)
+        public async Task<IActionResult> CreateBook(CreateBookDto bookDto)  
         {
-            var result = await _bookService.AddBookAsync(bookDto);
+            if (bookDto.Image == null || bookDto.Image.Length == 0)
+            {
+                return BadRequest("No image uploaded.");
+            }
+
+            byte[] imageBytes;
+            using (var memoryStream = new MemoryStream())
+            {
+                await bookDto.Image.CopyToAsync(memoryStream);
+                imageBytes = memoryStream.ToArray();
+            }
+
+            var result = await _bookService.AddBookAsync(bookDto, imageBytes);
+
             await _distributedCache.RemoveAsync($"allBooks");
+
             if (result.Success)
             {
                 return Ok(result);
@@ -35,11 +49,22 @@ namespace BookStore.Books.Controllers
             }
         }
 
+
         [HttpPut("{bookId}")]
-        [Authorize(Roles = "Admin")]
-        public async Task<IActionResult> UpdateBook(int bookId, [FromBody] UpdateBookDto bookDto)
+        [Authorize]
+        public async Task<IActionResult> UpdateBook(int bookId,  UpdateBookDto bookDto)
         {
-            var result = await _bookService.UpdateBookAsync(bookId, bookDto);
+            byte[] imageBytes = null;
+            if (bookDto.Image != null && bookDto.Image.Length > 0)
+            {
+                using (var memoryStream = new MemoryStream())
+                {
+                    await bookDto.Image.CopyToAsync(memoryStream);
+                    imageBytes = memoryStream.ToArray();
+                }
+            }
+
+            var result = await _bookService.UpdateBookAsync(bookId, bookDto, imageBytes);
             await _distributedCache.RemoveAsync($"allBooks");
             if (result.Success)
             {

@@ -12,25 +12,27 @@ namespace BookStore.Books.Services
         {
             _bookRepo = bookRepo;
         }
-        public async Task<ApiResponse<Book>> AddBookAsync(CreateBookDto bookDto)
+        public async Task<ApiResponse<Book>> AddBookAsync(CreateBookDto bookDto, byte[] imageBytes)
         {
-            return await _bookRepo.AddBookToDbAsync(bookDto);
+            return await _bookRepo.AddBookToDbAsync(bookDto, imageBytes);
         }
-        public async Task<ApiResponse<Book>> UpdateBookAsync(int bookId, UpdateBookDto bookDto)
+
+        public async Task<ApiResponse<Book>> UpdateBookAsync(int bookId, UpdateBookDto bookDto, byte[] imageBytes = null)
         {
-            return await _bookRepo.UpdateBookInDbAsync(bookId, bookDto);
+            return await _bookRepo.UpdateBookInDbAsync(bookId, bookDto, imageBytes);
         }
+
 
         public async Task<ApiResponse<Book>> DeleteBookAsync(int bookId)
         {
             return await _bookRepo.DeleteBookFromDbAsync(bookId);
         }
 
-        public async Task<ApiResponse<List<Book>>> GetAllBooksAsync()
+        public async Task<ApiResponse<List<BookResponseDto>>> GetAllBooksAsync()
         {
             return await _bookRepo.GetAllBooksFromDbAsync();
         }
-        public async Task<ApiResponse<Book>> GetBookByIdAsync(int Id)
+        public async Task<ApiResponse<BookResponseDto>> GetBookByIdAsync(int Id)
         {
             return await _bookRepo.GetBookByIdFromDb(Id);
         }

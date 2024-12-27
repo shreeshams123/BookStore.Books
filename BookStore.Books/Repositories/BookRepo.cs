@@ -20,7 +20,7 @@ namespace BookStore.Books.Repositories
             _distributedCache = distributedCache;
         }
 
-        public async Task<ApiResponse<Book>> AddBookToDbAsync(CreateBookDto bookDto)
+        public async Task<ApiResponse<Book>> AddBookToDbAsync(CreateBookDto bookDto, byte[] imageBytes)
         {
             var book = new Book
             {
@@ -29,10 +29,12 @@ namespace BookStore.Books.Repositories
                 Description = bookDto.Description,
                 StockQuantity = bookDto.StockQuantity,
                 Price = bookDto.Price,
-                ImageUrl = bookDto.ImageUrl
+                Image = imageBytes  
             };
+
             _context.Books.Add(book);
             await _context.SaveChangesAsync();
+
             var response = new ApiResponse<Book>
             {
                 Success = true,
@@ -42,7 +44,8 @@ namespace BookStore.Books.Repositories
 
             return response;
         }
-        public async Task<ApiResponse<Book>> UpdateBookInDbAsync(int bookId, UpdateBookDto bookDto)
+
+        public async Task<ApiResponse<Book>> UpdateBookInDbAsync(int bookId, UpdateBookDto bookDto, byte[] imageBytes = null)
         {
             var book = await _context.Books.FirstOrDefaultAsync(b => b.BookId == bookId);
             if (book == null)
@@ -54,12 +57,16 @@ namespace BookStore.Books.Repositories
                 };
             }
 
-            book.Title = bookDto.Title;
-            book.Author = bookDto.Author;
-            book.Description = bookDto.Description;
-            book.StockQuantity = bookDto.StockQuantity;
-            book.Price = bookDto.Price;
-            book.ImageUrl = bookDto.ImageUrl;
+            book.Title = string.IsNullOrEmpty(bookDto.Title) ? book.Title : bookDto.Title;
+            book.Author = string.IsNullOrEmpty(bookDto.Author) ? book.Author : bookDto.Author;
+            book.Description = string.IsNullOrEmpty(bookDto.Description) ? book.Description : bookDto.Description;
+            book.StockQuantity = bookDto.StockQuantity ?? book.StockQuantity;
+            book.Price = bookDto.Price ?? book.Price;
+
+            if (imageBytes != null && imageBytes.Length > 0)
+            {
+                book.Image = imageBytes;
+            }
 
             _context.Books.Update(book);
             await _context.SaveChangesAsync();
@@ -71,6 +78,8 @@ namespace BookStore.Books.Repositories
                 Data = book
             };
         }
+
+
 
         public async Task<ApiResponse<Book>> DeleteBookFromDbAsync(int bookId)
         {
@@ -94,29 +103,43 @@ namespace BookStore.Books.Repositories
             };
         }
 
-        public async Task<ApiResponse<List<Book>>> GetAllBooksFromDbAsync()
+        public async Task<ApiResponse<List<BookResponseDto>>> GetAllBooksFromDbAsync()
         {
             var books = await _context.Books.ToListAsync();
-            var serializedbooks = JsonSerializer.Serialize(books);
-            await _distributedCache.SetStringAsync($"allBooks", serializedbooks, new DistributedCacheEntryOptions
+
+            var bookDtos = books.Select(book => new BookResponseDto
+            {
+                BookId = book.BookId,
+                Title = book.Title,
+                Author = book.Author,
+                Description = book.Description,
+                StockQuantity = book.StockQuantity,
+                Price = book.Price,
+                Image = book.Image != null && book.Image.Length > 0 ? Convert.ToBase64String(book.Image) : null
+            }).ToList();
+
+            // Serialize the books list and cache it
+            var serializedBooks = JsonSerializer.Serialize(bookDtos);
+            await _distributedCache.SetStringAsync($"allBooks", serializedBooks, new DistributedCacheEntryOptions
             {
                 AbsoluteExpirationRelativeToNow = TimeSpan.FromMinutes(5)
             });
 
-            return new ApiResponse<List<Book>>
+            return new ApiResponse<List<BookResponseDto>>
             {
                 Success = true,
                 Message = "Books retrieved successfully",
-                Data = books
+                Data = bookDtos
             };
         }
 
-        public async Task<ApiResponse<Book>> GetBookByIdFromDb(int Id)
+
+        public async Task<ApiResponse<BookResponseDto>> GetBookByIdFromDb(int Id)
         {
             var book = await _context.Books.FindAsync(Id);
             if (book == null)
             {
-                return new ApiResponse<Book>
+                return new ApiResponse<BookResponseDto>
                 {
                     Success = false,
                     Message = "Book Not found"
@@ -124,11 +147,21 @@ namespace BookStore.Books.Repositories
             }
             else
             {
-                return new ApiResponse<Book>
+                string imageBase64 = book.Image != null ? Convert.ToBase64String(book.Image) : null;
+                return new ApiResponse<BookResponseDto>
                 {
                     Success = true,
                     Message = "Book retrieved successfully",
-                    Data = book
+                    Data = new BookResponseDto
+                    {
+                        BookId = book.BookId,
+                        Title = book.Title,
+                        Author = book.Author,
+                        Description = book.Description,
+                        StockQuantity = book.StockQuantity,
+                        Price = book.Price,
+                        Image = imageBase64
+                    }
                 };
 
 

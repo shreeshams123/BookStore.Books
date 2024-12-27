@@ -23,6 +23,6 @@ namespace BookStore.Books.Models.Entities
         public decimal Price { get; set; }
 
         [Required]
-        public string ImageUrl { get; set; }
+        public byte[] Image { get; set; }
     }
 }
