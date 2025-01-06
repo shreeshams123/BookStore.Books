@@ -5,6 +5,7 @@ using BookStore.Books.Models.Entities;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Caching.Distributed;
+using System.Text.Json;
 
 namespace BookStore.Books.Controllers
 {
@@ -21,7 +22,7 @@ namespace BookStore.Books.Controllers
         }
         [HttpPost]
         [Authorize(Roles = "Admin")]
-        public async Task<IActionResult> CreateBook(CreateBookDto bookDto)  
+        public async Task<IActionResult> CreateBook([FromForm]CreateBookDto bookDto)  
         {
             if (bookDto.Image == null || bookDto.Image.Length == 0)
             {
@@ -52,7 +53,7 @@ namespace BookStore.Books.Controllers
 
         [HttpPut("{bookId}")]
         [Authorize]
-        public async Task<IActionResult> UpdateBook(int bookId,  UpdateBookDto bookDto)
+        public async Task<IActionResult> UpdateBook(int bookId, UpdateBookDto bookDto)
         {
             byte[] imageBytes = null;
             if (bookDto.Image != null && bookDto.Image.Length > 0)
@@ -93,30 +94,67 @@ namespace BookStore.Books.Controllers
         }
 
         [HttpGet]
-        public async Task<IActionResult> GetAllBooks()
+        public async Task<IActionResult> GetAllBooks([FromQuery] int pageNumber = 1, [FromQuery] int pageSize = 15)
         {
             var cacheBooks = await _distributedCache.GetStringAsync("allBooks");
             if (!string.IsNullOrEmpty(cacheBooks))
             {
-                var booksFromCache = System.Text.Json.JsonSerializer.Deserialize<IEnumerable<Book>>(cacheBooks);
+                var booksFromCache = System.Text.Json.JsonSerializer.Deserialize<IEnumerable<BookResponseDto>>(cacheBooks);
 
-                var apiResponse = new ApiResponse<IEnumerable<Book>>
+                var paginatedBooks = booksFromCache
+                    .Skip((pageNumber - 1) * pageSize)
+                    .Take(pageSize)
+                    .ToList();
+
+                var apiResponse = new ApiResponse<PaginatedResponse<BookResponseDto>>
                 {
                     Success = true,
                     Message = "Books retrieved successfully from cache",
-                    Data = booksFromCache
+                    Data = new PaginatedResponse<BookResponseDto>
+                    {
+                        Items = paginatedBooks,
+                        PageNumber = pageNumber,
+                        PageSize = pageSize,
+                        TotalCount = booksFromCache.Count()
+                    }
                 };
+
                 return Ok(apiResponse);
             }
 
             var result = await _bookService.GetAllBooksAsync();
             if (result.Success)
             {
-                return Ok(result);
+                var serializedBooks = JsonSerializer.Serialize(result.Data);
+                await _distributedCache.SetStringAsync("allBooks", serializedBooks, new DistributedCacheEntryOptions
+                {
+                    AbsoluteExpirationRelativeToNow = TimeSpan.FromMinutes(5)
+                });
+
+                var paginatedBooks = result.Data
+                    .Skip((pageNumber - 1) * pageSize)
+                    .Take(pageSize)
+                    .ToList();
+
+                var apiResponse = new ApiResponse<PaginatedResponse<BookResponseDto>>
+                {
+                    Success = true,
+                    Message = "Books retrieved successfully from database",
+                    Data = new PaginatedResponse<BookResponseDto>
+                    {
+                        Items = paginatedBooks,
+                        PageNumber = pageNumber,
+                        PageSize = pageSize,
+                        TotalCount = result.Data.Count
+                    }
+                };
+
+                return Ok(apiResponse);
             }
 
             return BadRequest(result);
         }
+
 
 
         [HttpGet("{Id}")]

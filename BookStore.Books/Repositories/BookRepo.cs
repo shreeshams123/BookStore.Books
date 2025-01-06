@@ -118,7 +118,6 @@ namespace BookStore.Books.Repositories
                 Image = book.Image != null && book.Image.Length > 0 ? Convert.ToBase64String(book.Image) : null
             }).ToList();
 
-            // Serialize the books list and cache it
             var serializedBooks = JsonSerializer.Serialize(bookDtos);
             await _distributedCache.SetStringAsync($"allBooks", serializedBooks, new DistributedCacheEntryOptions
             {
